@@ -1,0 +1,5 @@
+.env
+backend/.env
+backend/bin
+frontend/bin
+frontend

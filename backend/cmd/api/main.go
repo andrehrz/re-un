@@ -1,9 +1,10 @@
 package main
 
 import (
+	"backend/internal/database"
 	"fmt"
-	"net/http"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -18,19 +19,36 @@ func main() {
 	}
 
 	port := os.Getenv("PORT")
-	if port == ""{
+	if port == "" {
 		port = "8080"
 	}
 
 	// this is my router
 	router := gin.Default()
 
+	// Initialize database connection
+	db, err := database.NewDB(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalf("Could not connect to the database: %v", err)
+	}
+	defer db.Close()
+
 	// defining some simple GET endpoints
-	router.GET("/ping", func(c *gin.Context) {
+	router.GET("/health", func(c *gin.Context) {
 		// returns a JSON response
+		if err := db.Ping(); err != nil {
+			c.JSON(500, gin.H{
+				"status":  "error",
+				"message": "could not connect to database",
+				"error":   err.Error(),
+			})
+			return
+		}
+
 		c.JSON(http.StatusOK, gin.H{
-			"status": "ok",
-			"message": "server is running",
+			"status":   "ok",
+			"message":  "server is running",
+			"database": "connected",
 		})
 	})
 

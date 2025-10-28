@@ -3,3 +3,4 @@ backend/.env
 backend/bin
 frontend/bin
 frontend
+.DS_Store

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"backend/internal/database"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,6 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+
+	"backend/internal/database"
+	"backend/internal/handlers"
 )
 
 func main() {
@@ -18,6 +20,13 @@ func main() {
 		log.Println("Could not load environment variables, no .env file found")
 	}
 
+	// Initialize database connection
+	db, err := database.NewDB(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalf("Could not connect to the database: %v", err)
+	}
+	defer db.Close()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -26,12 +35,8 @@ func main() {
 	// this is my router
 	router := gin.Default()
 
-	// Initialize database connection
-	db, err := database.NewDB(os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatalf("Could not connect to the database: %v", err)
-	}
-	defer db.Close()
+	// initialzing handlers
+	authHandler := handlers.NewAuthHandler(db)
 
 	// defining some simple GET endpoints
 	router.GET("/health", func(c *gin.Context) {
@@ -51,6 +56,8 @@ func main() {
 			"database": "connected",
 		})
 	})
+
+	router.POST("/api/auth/register", authHandler.RegisterUser)
 
 	log.Printf("Server is running on port %s", port)
 	if err := router.Run(":" + port); err != nil {

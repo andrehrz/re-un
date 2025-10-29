@@ -58,6 +58,8 @@ func main() {
 	})
 
 	router.POST("/api/auth/register", authHandler.RegisterUser)
+	router.POST("/api/auth/login", authHandler.LoginUser)
+	router.POST("/api/auth/refresh", authHandler.RefreshToken)
 
 	log.Printf("Server is running on port %s", port)
 	if err := router.Run(":" + port); err != nil {

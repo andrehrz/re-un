@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	"backend/internal/auth"
 	"backend/internal/database"
 	"backend/internal/handlers"
 )
@@ -60,6 +61,13 @@ func main() {
 	router.POST("/api/auth/register", authHandler.RegisterUser)
 	router.POST("/api/auth/login", authHandler.LoginUser)
 	router.POST("/api/auth/refresh", authHandler.RefreshToken)
+
+	//establishing protected routes
+	protected := router.Group("/api")
+	protected.Use(auth.AuthMiddleware()) 
+	{
+		protected.GET("/me", authHandler.GetCurrentUser)
+	}
 
 	log.Printf("Server is running on port %s", port)
 	if err := router.Run(":" + port); err != nil {

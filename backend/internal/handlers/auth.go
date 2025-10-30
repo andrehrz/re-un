@@ -274,3 +274,28 @@ func (handler *AuthHandler) RefreshToken(c *gin.Context){
 	})
 
 }
+
+func (handler *AuthHandler) GetCurrentUser(c *gin.Context) {
+	userID, ok := auth.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found in context"})
+		return 
+	}
+
+	// have a user id 
+	var user models.User
+	err := handler.db.QueryRow(
+		"SELECT id, email, created_at FROM users WHERE id = $1",
+		userID,
+	).Scan(&user.ID, &user.Email, &user.CreatedAt)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	}
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Database error"})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}

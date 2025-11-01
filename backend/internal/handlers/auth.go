@@ -299,3 +299,38 @@ func (handler *AuthHandler) GetCurrentUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"user": user})
 }
+
+func (handler *AuthHandler) LogoutUser(c *gin.Context) {
+	var req models.UserLogoutRequest
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	
+	userID, exists := auth.GetUserIDFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No user id in context"})
+		return
+	}
+
+	// delete refresh token associated with user
+	result, err := handler.db.Exec(
+		"DELETE FROM refresh_tokens WHERE token = $1 AND user_id =$2", 
+		req.RefreshToken,
+		userID,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete refresh token from database"})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token not found or already deleted"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}

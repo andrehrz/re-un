@@ -78,6 +78,7 @@ func main() {
 	protected.Use(auth.AuthMiddleware()) 
 	{
 		protected.GET("/me", authHandler.GetCurrentUser)
+		protected.POST("/logout", authHandler.LogoutUser)
 	}
 
 	log.Printf("Server is running on port %s", port)
